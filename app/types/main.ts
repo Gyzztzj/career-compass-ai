@@ -1,0 +1,47 @@
+/**
+ * 上传文件响应
+ * @param fileId 文件ID
+ * @param content 文件内容
+ * @param contentSize 文件大小
+ * @param fileName 文件名
+ */
+export interface IUploadResponse {
+  fileId: string;
+  content: string;
+  contentSize: number;
+  fileName: string;
+}
+/**
+ * 分析简历响应
+ * @param resumeText 简历文本
+ * @param jdText JD文本
+ */
+export interface IAnalysisInput {
+  resumeText: string;
+  jdText: string;
+}
+/**
+ * 分析简历结果
+ * @param matchScore 匹配分数
+ * @param summary 摘要
+ * @param detailSummary 详细摘要
+ * @param skills 技能匹配结果
+ * @param suggestions 建议列表
+ */
+export interface IAnalysisResult {
+  matchScore: number;
+  summary: string;
+  detailSummary: string;
+  skills: { label: string; score: number }[];
+  suggestions: string[];
+}
+
+/**
+ * 简历上传组件属性
+ * @param fileInfo 上传文件信息
+ * @param onFileChange 文件上传回调
+ */
+export interface IResumeUploadProps {
+  fileInfo: IUploadResponse | null;
+  onFileChange: (fileInfo: IUploadResponse | null) => void;
+}
