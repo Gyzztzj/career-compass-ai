@@ -1,15 +1,19 @@
-import { llm, analysisPrompt, outputParser } from "@/app/lib/langchain";
+import {
+  analysisPrompt,
+  outputParser,
+  createLLM,
+  validateApiKey,
+} from "@/app/lib/langchain";
 import { analyzeLogger } from "@/app/services/logServive";
-import { IAnalysisInput, IAnalysisResult } from "../types/main";
+import { IAnalysisInput, IAnalysisResult, IModelConfig } from "../types/main";
 
-/**
- * 运行简历分析
- * @param input 分析输入
- * @returns 分析结果
- */
 export async function runAnalysis(
   input: IAnalysisInput,
+  config: IModelConfig,
 ): Promise<IAnalysisResult> {
+  validateApiKey(config.apiKey);
+
+  const llm = createLLM(config);
   const chain = analysisPrompt.pipe(llm).pipe(outputParser);
 
   let rawResult: string;

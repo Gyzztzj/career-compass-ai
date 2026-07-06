@@ -1,56 +1,72 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Header from "./components/Header";
 import ResumeUpload from "./components/ResumeUpload";
 import JDInput from "./components/JDInput";
 import AnalysisResult from "./components/AnalysisResult";
+import ModelConfig from "./components/ModelConfig";
 import { Loader2 } from "lucide-react";
-import { IAnalysisResult, IUploadResponse } from "@/app/types/main";
+import {
+  IAnalysisResult,
+  IUploadResponse,
+  IModelConfig,
+  DEFAULT_MODEL_CONFIG,
+} from "@/app/types/main";
+import { analyzeResume } from "@/app/lib/platform";
 
 type Step = "input" | "analyzing" | "result";
+
+const STORAGE_KEY = "career-compass-ai-config";
 
 export default function Home() {
   const [step, setStep] = useState<Step>("input");
   const [resumeFile, setResumeFile] = useState<IUploadResponse | null>(null);
   const [jdText, setJdText] = useState("");
   const [result, setResult] = useState<IAnalysisResult | null>(null);
-  const canAnalyze = resumeFile !== null && jdText.trim().length > 0;
+  const [showConfig, setShowConfig] = useState(false);
+  const [modelConfig, setModelConfig] =
+    useState<IModelConfig>(DEFAULT_MODEL_CONFIG);
 
-  /**
-   * 处理分析点击事件
-   */
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as IModelConfig;
+        setModelConfig({
+          ...DEFAULT_MODEL_CONFIG,
+          ...parsed,
+        });
+      } catch {}
+    }
+  }, []);
+
+  const canAnalyze =
+    resumeFile !== null &&
+    jdText.trim().length > 0 &&
+    modelConfig.apiKey.trim().length > 0;
+
   const handleAnalyze = async () => {
     if (!resumeFile?.content || !jdText) return;
 
     setStep("analyzing");
 
     try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resumeText: resumeFile?.content,
+      const analysisResult = await analyzeResume(
+        {
+          resumeText: resumeFile.content,
           jdText: jdText,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "分析失败");
-      }
-
-      setResult(result.data);
+        },
+        modelConfig,
+      );
+      setResult(analysisResult);
       setStep("result");
     } catch (error: any) {
       setStep("input");
       alert(error.message || "分析失败，请重试");
     }
   };
-  /**
-   * 处理重置点击事件
-   */
+
   const handleReset = useCallback(() => {
     setStep("input");
     setResumeFile(null);
@@ -58,13 +74,16 @@ export default function Home() {
     setResult(null);
   }, []);
 
+  const handleConfigChange = (config: IModelConfig) => {
+    setModelConfig(config);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <Header />
+      <Header onConfigClick={() => setShowConfig(true)} />
 
       <main className="flex flex-1 justify-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="w-full max-w-2xl space-y-6">
-          {/* Step: Input */}
           {(step === "input" || step === "analyzing") && (
             <>
               <ResumeUpload
@@ -85,6 +104,8 @@ export default function Home() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     分析约需10-30秒，请耐心等待
                   </>
+                ) : !modelConfig.apiKey.trim() ? (
+                  "请先配置 API 密钥"
                 ) : (
                   "上传简历与JD后开始分析"
                 )}
@@ -98,7 +119,6 @@ export default function Home() {
             </>
           )}
 
-          {/* Step: Result */}
           {step === "result" && result && (
             <>
               <AnalysisResult
@@ -120,6 +140,14 @@ export default function Home() {
           )}
         </div>
       </main>
+
+      {showConfig && (
+        <ModelConfig
+          config={modelConfig}
+          onChange={handleConfigChange}
+          onClose={() => setShowConfig(false)}
+        />
+      )}
     </div>
   );
 }

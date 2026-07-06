@@ -12,6 +12,10 @@ interface AnalysisResultProps {
   suggestions: string[];
 }
 
+/**
+ * 分析结果组件
+ */
+
 export default function AnalysisResult({
   matchScore,
   summary,

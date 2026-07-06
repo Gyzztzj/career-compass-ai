@@ -1,17 +1,24 @@
 {
   "name": "career-compass-ai",
   "version": "0.1.0",
+  "description": "一个简历分析工具，用户可以上传简历和岗位描述，工具会分析简历与岗位描述的匹配度，给出匹配分数",
+  "author": "mo-xiu",
   "private": true,
+  "main": "electron/dist/main.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "debug": "set NODE_OPTIONS=--inspect && next dev",
-    "start": "next start",
+    "dev:web": "next dev",
+    "build:web": "next build",
+    "start:web": "next start",
+    "dev:electron": "concurrently \"cross-env NEXT_OUTPUT=export next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "build:electron": "cross-env NEXT_OUTPUT=export next build && webpack --config webpack.electron.config.js",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "debug": "set NODE_OPTIONS=--inspect && next dev"
   },
   "dependencies": {
-    "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.2.1",
     "@langchain/openai": "^1.5.3",
     "dashscope": "^1.0.1",
@@ -26,12 +33,55 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
     "@tailwindcss/postcss": "^4",
+    "@types/minimatch": "^5.1.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/wait-on": "^5.3.4",
     "babel-plugin-react-compiler": "1.0.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^32.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5",
+    "wait-on": "^9.0.10",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "packageManager": "pnpm"
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "career_compass_ai"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
   }
 }

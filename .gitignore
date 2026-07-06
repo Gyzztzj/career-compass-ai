@@ -4,7 +4,6 @@
 /node_modules
 /.pnpm-local-store
 /.pnp
-/temp/
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -18,6 +17,10 @@
 # next.js
 /.next/
 /out/
+/export/
+
+# electron
+electron/dist/
 
 # production
 /build
@@ -25,6 +28,7 @@
 # misc
 .DS_Store
 *.pem
+*.log
 
 # debug
 npm-debug.log*
@@ -41,3 +45,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temporary files
+/temp/
+
+# npm/yarn lock files (use pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
+# electron-forge
+/.electron-forge/

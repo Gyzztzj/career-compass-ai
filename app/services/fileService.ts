@@ -17,18 +17,52 @@ const DOCX_TYPES = [
   "application/octet-stream",
 ];
 
-function isPDF(file: File): boolean {
+/**
+ * 检查文件路径是否为PDF文件
+ * @param filePath 文件路径
+ * @returns 是否为PDF文件
+ */
+function isPDFFromPath(filePath: string): boolean {
+  return filePath.toLowerCase().endsWith(".pdf");
+}
+
+/**
+ * 检查文件路径是否为DOCX文件
+ * @param filePath 文件路径
+ * @returns 是否为DOCX文件
+ */
+function isDOCXFromPath(filePath: string): boolean {
+  return filePath.toLowerCase().endsWith(".docx");
+}
+
+/**
+ * 检查文件是否为PDF文件
+ * @param file 文件
+ * @returns 是否为PDF文件
+ */
+function isPDFFromFile(file: File): boolean {
   return (
     PDF_TYPES.includes(file.type) || file.name.toLowerCase().endsWith(".pdf")
   );
 }
 
-function isDOCX(file: File): boolean {
+/**
+ * 检查文件是否为DOCX文件
+ * @param file 文件
+ * @returns 是否为DOCX文件
+ */
+function isDOCXFromFile(file: File): boolean {
   return (
     DOCX_TYPES.includes(file.type) || file.name.toLowerCase().endsWith(".docx")
   );
 }
 
+/**
+ * 超时处理Promise
+ * @param promise 要处理的Promise
+ * @param ms 超时时间（毫秒）
+ * @returns 处理后的Promise
+ */
 function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -47,6 +81,11 @@ function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+/**
+ * 解析简历文件
+ * @param file 文件
+ * @returns 解析后的简历内容
+ */
 export async function parseResumeFile(file: File): Promise<IUploadResponse> {
   const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   const tempPath = path.join(process.cwd(), "temp", `${fileId}.tmp`);
@@ -64,9 +103,9 @@ export async function parseResumeFile(file: File): Promise<IUploadResponse> {
   try {
     let content: string = "";
 
-    if (isPDF(file)) {
+    if (isPDFFromFile(file)) {
       content = await timeoutPromise(parsePDF(tempPath), 30000);
-    } else if (isDOCX(file)) {
+    } else if (isDOCXFromFile(file)) {
       content = await timeoutPromise(parseDOCX(tempPath), 30000);
     } else {
       throw new Error(`不支持的文件类型: ${file.type}`);
@@ -93,9 +132,59 @@ export async function parseResumeFile(file: File): Promise<IUploadResponse> {
 }
 
 /**
- * PDF 解析器
- * @param filePath PDF 文件路径
- * @returns 解析后的文本
+ * 解析简历文件（从路径）
+ * @param filePath 文件路径
+ * @returns 解析后的简历内容
+ */
+export async function parseResumeFromPath(
+  filePath: string,
+): Promise<IUploadResponse> {
+  const fileId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  const fileName = path.basename(filePath);
+  const stats = await fs.stat(filePath);
+
+  fileLogger.info("开始解析文件（路径）", {
+    fileName,
+    filePath,
+    fileSize: stats.size,
+  });
+
+  try {
+    let content: string = "";
+
+    if (isPDFFromPath(filePath)) {
+      content = await timeoutPromise(parsePDF(filePath), 30000);
+    } else if (isDOCXFromPath(filePath)) {
+      content = await timeoutPromise(parseDOCX(filePath), 30000);
+    } else {
+      throw new Error(`不支持的文件类型`);
+    }
+
+    if (!content || content.trim().length === 0) {
+      throw new Error("文件解析结果为空，可能是扫描件或加密文件");
+    }
+
+    fileLogger.info("文件解析成功", {
+      fileName,
+      contentLength: content.length,
+    });
+
+    return {
+      fileId,
+      content,
+      contentSize: content.length,
+      fileName,
+    };
+  } catch (error: any) {
+    fileLogger.error("文件解析错误:", error.message || error);
+    throw error;
+  }
+}
+
+/**
+ * 解析PDF文件
+ * @param filePath 文件路径
+ * @returns 解析后的PDF内容
  */
 async function parsePDF(filePath: string): Promise<string> {
   try {
@@ -111,9 +200,9 @@ async function parsePDF(filePath: string): Promise<string> {
 }
 
 /**
- * DOCX 解析器
- * @param filePath DOCX 文件路径
- * @returns 解析后的文本
+ * 解析DOCX文件
+ * @param filePath 文件路径
+ * @returns 解析后的DOCX内容
  */
 async function parseDOCX(filePath: string): Promise<string> {
   try {
@@ -126,9 +215,9 @@ async function parseDOCX(filePath: string): Promise<string> {
 }
 
 /**
- * 清洗文本
- * @param text 待清洗的文本
- * @returns 清洗后的文本
+ * 清理文本
+ * @param text 待清理的文本
+ * @returns 清理后的文本
  */
 function cleanText(text: string): string {
   return text

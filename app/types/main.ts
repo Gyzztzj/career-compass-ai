@@ -45,3 +45,21 @@ export interface IResumeUploadProps {
   fileInfo: IUploadResponse | null;
   onFileChange: (fileInfo: IUploadResponse | null) => void;
 }
+
+/**
+ * 模型配置
+ * @param apiKey API密钥
+ * @param baseUrl 模型基础URL
+ * @param modelName 模型名称
+ */
+export interface IModelConfig {
+  apiKey: string;
+  baseUrl: string;
+  modelName: string;
+}
+
+export const DEFAULT_MODEL_CONFIG: IModelConfig = {
+  apiKey: "",
+  baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  modelName: "qwen-plus",
+};
